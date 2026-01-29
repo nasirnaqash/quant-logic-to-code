@@ -103,6 +103,3 @@ Generated code is blocked if it contains:
 | `open` | File system access |
 | `random` | Non-deterministic output |
 
-## License
-
-MIT
