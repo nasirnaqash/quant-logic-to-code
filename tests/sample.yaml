@@ -1,0 +1,73 @@
+metadata:
+  schema_version: "1.0"
+  module: "scoring"
+  logic_id: "momentum_score"
+  author: "quant_team"
+  description: "Score assets based on momentum signals"
+
+inputs:
+  asset_data:
+    type: dict
+    schema:
+      ticker: string
+      price_20d_ago: float
+      price_today: float
+      volume_avg_10d: float
+      volume_today: float
+
+parameters:
+  momentum_weight:
+    type: float
+    default: 0.6
+  volume_weight:
+    type: float
+    default: 0.4
+
+logic_blocks:
+  - id: momentum_calc
+    type: calculation
+    formula: "(price_today - price_20d_ago) / price_20d_ago * 100"
+    inputs:
+      price_today: asset_data.price_today
+      price_20d_ago: asset_data.price_20d_ago
+    outputs:
+      momentum_pct: float
+
+  - id: volume_calc
+    type: calculation
+    formula: "volume_today / volume_avg_10d"
+    inputs:
+      volume_today: asset_data.volume_today
+      volume_avg_10d: asset_data.volume_avg_10d
+    outputs:
+      volume_ratio: float
+
+  - id: final_score
+    type: aggregation
+    method: weighted_sum
+    inputs:
+      momentum:
+        source: momentum_calc.momentum_pct
+        weight: 0.6
+      volume:
+        source: volume_calc.volume_ratio
+        weight: 0.4
+    outputs:
+      score: float
+
+guardrails:
+  - id: score_bounds
+    type: validation
+    target: score
+    rule: range
+    min: -100
+    max: 100
+    on_violation: error
+
+outputs:
+  score:
+    type: float
+    source: final_score.score
+  momentum_pct:
+    type: float
+    source: momentum_calc.momentum_pct

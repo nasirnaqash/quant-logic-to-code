@@ -1,0 +1,8 @@
+langchain
+langchain-anthropic
+pydantic
+pyyaml
+redis
+docker
+pytest
+dotenv
